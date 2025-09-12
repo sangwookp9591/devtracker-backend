@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+    postgres:
+        image: postgres:15
+        container_name: devtracker-postgres
+        restart: always
+        environment:
+            POSTGRES_DB: devtracker_local
+            POSTGRES_USER: devtracker
+            POSTGRES_PASSWORD: devtracker123
+        ports:
+            - '5432:5432'
+        volumes:
+            - devtracker-db-data:/var/lib/postgresql/data
+
+    redis-main:
+        image: redis:7
+        container_name: devtracker-redis
+        restart: always
+        ports:
+            - '6379:6379'
+        volumes:
+            - devtracker-redis-data:/data
+            - ./redis/devtracker-redis.conf:/usr/local/etc/redis/redis.conf
+        command: redis-server /usr/local/etc/redis/redis.conf
+        networks:
+            - redis-network
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            interval: 10s
+            timeout: 3s
+            retries: 5
+
+networks:
+    redis-network:
+        driver: bridge
+
+volumes:
+    devtracker-db-data:
+    devtracker-redis-data:
