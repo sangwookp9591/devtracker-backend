@@ -3,6 +3,7 @@ plugins {
     id("org.springframework.boot") version "3.5.5"
     id("io.spring.dependency-management") version "1.1.7"
     id("com.diffplug.spotless") version "6.22.0"
+    id("org.asciidoctor.jvm.convert") version "3.3.2"
 }
 
 group = "com.devtracker"
@@ -94,9 +95,10 @@ spotless {
 
     // 기타 리소스나 설정 파일
     format("misc") {
-        target("**/*.gradle", "**/*.md", "**/*.yml", "**/*.yaml", "**/*.properties")
+        target("**/*.gradle", "**/*.md", "**/*.properties")
         trimTrailingWhitespace()
-        indentWithSpaces()
+        indentWithSpaces() // 기존대로
+
         endWithNewline()
     }
 }
