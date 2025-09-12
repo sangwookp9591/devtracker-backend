@@ -1,0 +1,199 @@
+spring:
+    profiles:
+        active: local
+
+    application:
+        name: devtracker-backend
+
+    # JPA 설정
+    jpa:
+        hibernate:
+            ddl-auto: update # 운영에서는 validate, 개발시 update
+        show-sql: true # 운영에서는 false
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.PostgreSQLDialect
+                format_sql: true
+                use_sql_comments: true
+                jdbc:
+                    batch_size: 20
+                order_inserts: true
+                order_updates: true
+        open-in-view: false # 성능상 false 권장
+
+    # 데이터베이스 연결
+    datasource:
+        hikari:
+            maximum-pool-size: 20
+            minimum-idle: 5
+            connection-timeout: 20000
+            idle-timeout: 300000
+            max-lifetime: 1200000
+            leak-detection-threshold: 60000
+
+    # Redis 설정
+    data:
+        redis:
+            timeout: 2000ms
+            lettuce:
+                pool:
+                    max-active: 8
+                    max-idle: 8
+                    min-idle: 0
+
+    # 캐시 설정
+    cache:
+        type: redis
+        redis:
+            time-to-live: 600s # 10분
+
+    # OAuth2 설정 (GitHub)
+    security:
+        oauth2:
+            client:
+                registration:
+                    github:
+                        client-name: GitHub
+                        authorization-grant-type: authorization_code
+                        redirect-uri: '{baseUrl}/oauth2/callback/{registrationId}'
+                        scope:
+                            - user:email
+                            - read:user
+                provider:
+                    github:
+                        authorization-uri: https://github.com/login/oauth/authorize
+                        token-uri: https://github.com/login/oauth/access_token
+                        user-info-uri: https://api.github.com/user
+                        user-name-attribute: id
+
+# Management endpoints (Actuator)
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health,info,metrics,prometheus
+            base-path: /actuator
+    endpoint:
+        health:
+            show-details: when-authorized
+    metrics:
+        export:
+            prometheus:
+                enabled: true
+
+# 로깅 설정
+logging:
+    level:
+        com.devtracker: INFO
+        org.springframework.security: INFO
+        org.hibernate.SQL: INFO
+    pattern:
+        console: '%d{yyyy-MM-dd HH:mm:ss} - %msg%n'
+        file: '%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n'
+
+# 애플리케이션 설정
+app:
+    jwt:
+        expiration: 86400000 # 24시간 (밀리초)
+        refresh-expiration: 604800000 # 7일 (밀리초)
+    oauth2:
+        authorized-redirect-uris:
+            - http://localhost:3000/oauth2/redirect
+            - http://localhost:19006/oauth2/redirect # Expo 개발서버
+            - devtracker://oauth2/redirect # 모바일 딥링크
+    cors:
+        allowed-origins:
+            - http://localhost:3000
+            - http://localhost:19006
+            - devtracker://
+        allowed-methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - PATCH
+            - OPTIONS
+        allowed-headers: '*'
+        allow-credentials: true
+
+---
+# local 환경 설정
+spring:
+    config:
+        activate:
+            on-profile: local
+
+    datasource:
+        url: jdbc:postgresql://localhost:5432/devtracker_local
+        username: devtracker
+        password: devtracker123
+        driver-class-name: org.postgresql.Driver
+
+    data:
+        redis:
+            host: localhost
+            port: 6379
+            database: 0
+
+    jpa:
+        hibernate:
+            ddl-auto: update # 로컬에서는 auto-update
+        show-sql: true
+
+    security:
+        oauth2:
+            client:
+                registration:
+                    github:
+                        client-id: ${GITHUB_CLIENT_ID:your-github-client-id}
+                        client-secret: ${GITHUB_CLIENT_SECRET:your-github-client-secret}
+
+app:
+    jwt:
+        secret: ${JWT_SECRET:mySecretKey-for-local-development-only-do-not-use-in-production}
+
+logging:
+    level:
+        com.devtracker: DEBUG
+        org.springframework.security: DEBUG
+        org.hibernate.SQL: DEBUG
+
+---
+# 운영 환경 설정
+spring:
+    config:
+        activate:
+            on-profile: prod
+
+    datasource:
+        url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:devtracker}
+        username: ${DB_USERNAME:devtracker}
+        password: ${DB_PASSWORD:password}
+
+    data:
+        redis:
+            host: ${REDIS_HOST:localhost}
+            port: ${REDIS_PORT:6379}
+            password: ${REDIS_PASSWORD:}
+
+    jpa:
+        hibernate:
+            ddl-auto: validate # 운영에서는 validate만
+        show-sql: false
+
+    security:
+        oauth2:
+            client:
+                registration:
+                    github:
+                        client-id: ${GITHUB_CLIENT_ID}
+                        client-secret: ${GITHUB_CLIENT_SECRET}
+
+app:
+    jwt:
+        secret: ${JWT_SECRET}
+
+logging:
+    level:
+        root: WARN
+        com.devtracker: INFO
