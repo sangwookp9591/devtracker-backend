@@ -1,4 +1,4 @@
-package com.devtracker.backend.controller.dto.request;
+package com.devtracker.backend.dto.request;
 
 
 import com.devtracker.backend.entity.user.enums.DeveloperType;
