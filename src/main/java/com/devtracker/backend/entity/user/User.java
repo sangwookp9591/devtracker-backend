@@ -114,4 +114,28 @@ public class User extends BaseTimeEntity{
         this.emailVerified = emailVerified != null ? emailVerified : false;
     }
 
+
+        // 비즈니스 로직 메서드들
+    public void updateProfile(String nickname, String profileImage) {
+        if (nickname != null && !nickname.trim().isEmpty()) {
+            this.nickname = nickname;
+        }
+        if (profileImage != null) {
+            this.profileImage = profileImage;
+        }
+    }
+
+    public void updateDeveloperInfo(DeveloperType developerType, BigDecimal hourlyRate) {
+        if (developerType != null) {
+            this.developerType = developerType;
+        }
+        if (hourlyRate != null) {
+            this.hourlyRate = hourlyRate;
+        }
+    }
+
+    public void updateGitHubUsername(String githubUsername) {
+        this.githubUsername = githubUsername;
+    }
+
 }
