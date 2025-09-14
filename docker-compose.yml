@@ -1,0 +1,99 @@
+version: "3.8"
+
+services:
+  # Spring Boot 백엔드 추가
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+        - linux/arm64
+    container_name: devtracker-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres
+      - REDIS_HOST=redis-main
+    depends_on:
+      postgres:
+        condition: service_started
+      redis-main:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - devtracker-network
+      - redis-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:15
+    container_name: devtracker-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: devtracker_local
+      POSTGRES_USER: devtracker
+      POSTGRES_PASSWORD: devtracker123
+    ports:
+      - "5432:5432"
+    volumes:
+      - devtracker-db-data:/var/lib/postgresql/data
+    networks:
+      - devtracker-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devtracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis-main:
+    image: redis:7
+    container_name: devtracker-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - devtracker-redis-data:/data
+      - ./redis/devtracker-redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - devtracker-network
+      - redis-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Nginx 프록시 추가
+  nginx:
+    image: nginx:alpine
+    container_name: devtracker-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - backend
+    networks:
+      - devtracker-network
+
+networks:
+  devtracker-network:
+    driver: bridge
+  redis-network:
+    driver: bridge
+
+volumes:
+  devtracker-db-data:
+  devtracker-redis-data:

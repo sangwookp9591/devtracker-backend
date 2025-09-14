@@ -1,0 +1,74 @@
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:5432/devtracker_local
+    username: devtracker
+    password: devtracker123
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      leak-detection-threshold: 60000
+
+  data:
+    redis:
+      host: ${REDIS_HOST:redis-main}
+      port: 6379
+      password: my$ecureR3disP@ssw0rd
+      database: 0
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: ${GITHUB_CLIENT_ID:Ov23liJgJ5EQFHHpJUts}
+            client-secret: ${GITHUB_CLIENT_SECRET:7fd72b0b5e83c20e9ef8761aa888fafac9f58b0f}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:mySecretKey-for-docker-development-only}
+  oauth2:
+    authorized-redirect-uris:
+      - http://localhost:3000/oauth2/redirect
+      - http://devtracker.co.kr/oauth2/redirect
+      - devtracker://oauth2/redirect
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+      - http://localhost:19006
+      - http://devtracker.co.kr
+      - https://devtracker.co.kr
+      - devtracker://
+    allowed-methods: [GET, POST, PUT, DELETE, PATCH, OPTIONS]
+    allowed-headers: "*"
+    allow-credentials: true
+
+logging:
+  level:
+    com.devtracker: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG
+  file:
+    name: /app/logs/application.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 30
